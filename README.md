@@ -20,23 +20,20 @@ HTTP ← PAM / Tokio ← PamClient ← Octane Worker ← Laravel
 
 ## Start here
 
-PAM Octane is a Composer package for the PAM runtime; it is not a standalone
-PHP server. Install PAM first and verify that PHP 8.5 is active:
+PAM Octane is a Composer product that connects a Laravel application to the
+PAM Runtime; it is not a standalone server. Install PAM first, then add Octane
+and the bridge from inside the Laravel application:
 
 ```bash
+curl --proto '=https' --proto-redir '=https' --tlsv1.2 \
+    --connect-timeout 15 --max-time 60 --max-filesize 1048576 -fsSL \
+    https://github.com/push-in/pam/releases/latest/download/install.sh | sh
+
+pam doctor
 pam --version
 pam -r 'echo PHP_VERSION, PHP_EOL;'
-```
-
-Inside an existing Laravel application:
-
-```bash
+cd my-laravel-app
 pam composer require laravel/octane pushinbr/pam-octane
-```
-
-Start it:
-
-```bash
 pam octane:start
 ```
 
