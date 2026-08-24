@@ -1,12 +1,48 @@
+<!-- pam:product-page:start -->
 <div align="center">
 
 # PAM Octane
 
-### Laravel Octane, powered by Rust and Tokio.
+**Laravel Octane lifecycle, powered by Rust and Tokio.**
 
-Boot Laravel once. Keep Octane's trusted lifecycle. Let PAM own the runtime.
+Connect PAM's native HTTP transport to Octane while Octane keeps ownership of Laravel isolation and worker lifecycle.
+
+[![Release](https://img.shields.io/github/v/release/push-in/pam-octane?style=flat-square&label=stable)](https://github.com/push-in/pam-octane/releases)
+![PHP](https://img.shields.io/badge/PHP-8.5-777BB4?style=flat-square&logo=php&logoColor=white)
+![License](https://img.shields.io/github/license/push-in/pam-octane?style=flat-square)
+
+**[Documentation](https://push-in.github.io/pam-docs/laravel/overview/) · [Why this exists](#why-this-exists) · [What you can build](#what-you-can-build) · [Quick start](#quick-start) · [Issues](https://github.com/push-in/pam-octane/issues)**
 
 </div>
+
+---
+
+## Why this exists
+
+Connect PAM's native HTTP transport to Octane while Octane keeps ownership of Laravel isolation and worker lifecycle.
+
+| | |
+| --- | --- |
+| **Role** | Octane server adapter |
+| **Execution path** | PAM Runtime · Laravel Octane |
+| **This repository owns** | Transport bridge and PAM server integration |
+| **Boundary** | Octane remains the lifecycle authority; this is not a Laravel fork |
+
+## What you can build
+
+- Existing Octane applications on PAM transport
+- High-throughput Laravel services
+- Rust-served opt-in public response caching with safe bypass rules
+
+## Quick start
+
+```bash
+pam composer require laravel/octane pushinbr/pam-octane
+pam octane:start
+```
+
+The **[PAM documentation](https://push-in.github.io/pam-docs/laravel/overview/)** covers prerequisites, production setup, and the complete workflow. PAM projects keep normal manifests and lockfiles; product features stay in the package that owns them.
+<!-- pam:product-page:end -->
 
 PAM Octane connects PAM's native HTTP transport directly to Laravel Octane's
 worker. Octane continues to own application isolation, lifecycle events and
@@ -17,56 +53,6 @@ Tokio-powered infrastructure.
 HTTP → PAM / Tokio → PamClient → Octane Worker → Laravel
 HTTP ← PAM / Tokio ← PamClient ← Octane Worker ← Laravel
 ```
-
-## Start here
-
-PAM Octane is a Composer product that connects a Laravel application to the
-PAM Runtime; it is not a standalone server. Install PAM first, then add Octane
-and the bridge from inside the Laravel application:
-
-```bash
-curl --proto '=https' --proto-redir '=https' --tlsv1.2 \
-    --connect-timeout 15 --max-time 60 --max-filesize 1048576 -fsSL \
-    https://github.com/push-in/pam/releases/latest/download/install.sh | sh
-
-pam doctor
-pam --version
-pam -r 'echo PHP_VERSION, PHP_EOL;'
-cd my-laravel-app
-pam composer require laravel/octane pushinbr/pam-octane
-pam octane:start
-```
-
-Open <http://127.0.0.1:8000>. That is the complete development setup.
-
-Use another address or port when needed:
-
-```bash
-pam octane:start -- --host=0.0.0.0 --port=8080
-```
-
-For public, anonymous read endpoints, PAM can serve an explicitly opted-in
-response from Rust without re-entering PHP. The cache is disabled until paths
-are listed, and authenticated or cookie-bearing requests always bypass it:
-
-```dotenv
-PAM_RESPONSE_CACHE_PATHS=/api/catalog,/api/health-summary
-PAM_RESPONSE_CACHE_VARY_HEADERS=accept-language
-PAM_RESPONSE_CACHE_TTL_MS=30000
-PAM_RESPONSE_CACHE_STALE_WHILE_REVALIDATE_MS=5000
-PAM_RESPONSE_CACHE_MAX_ENTRIES=1024
-PAM_RESPONSE_CACHE_MAX_BYTES=67108864
-PAM_PHP_QUEUE_CAPACITY=1024
-PAM_ROUTE_METRICS=false
-PAM_ROUTE_METRICS_MAX_ENTRIES=256
-PAM_RESPONSE_CACHE_PURGE_PATH=/__pam/cache/purge
-PAM_RESPONSE_CACHE_PURGE_SECRET=a-random-secret-with-at-least-32-bytes
-PAM_RESPONSE_CACHE_TAG_HEADER=x-pam-cache-tags
-```
-
-Only `GET 200` responses without `Set-Cookie`, `private`, or `no-store` are
-stored. Concurrent cold requests for the same key collapse into one Laravel
-execution. Query strings are part of the key.
 
 ## Why this bridge exists
 
