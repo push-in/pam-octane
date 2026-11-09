@@ -80,10 +80,18 @@ Environment variables include:
 ```dotenv
 PAM_HOST=127.0.0.1
 PAM_PORT=8000
-PAM_REQUEST_TIMEOUT_MS=30000
+PAM_REQUEST_TIMEOUT_MS=30000      # default: octane.max_execution_time
 PAM_MAX_BODY_BYTES=2097152
 PAM_MAX_RESPONSE_BYTES=268435456
 ```
+
+With PAM 2.2.13 or newer:
+
+- Uploads are streamed to temporary files, like PHP-FPM: a 1 GB upload works with the default `memory_limit`. PHP's `upload_max_filesize`, `post_max_size`, `max_file_uploads` and `upload_tmp_dir` apply, `is_uploaded_file()`/`move()` work, and the files are deleted when the request ends. `PAM_MAX_BODY_BYTES` only bounds bodies held in memory.
+- The request timeout follows Octane's `octane.max_execution_time` (`0` disables it; `PAM_REQUEST_TIMEOUT_MS` overrides it). A request past it is answered `504 Gateway Timeout`, even when the handler blocks, and its worker is replaced.
+- `octane:reload` and `--max-requests` recycling are make-before-break and drop no requests. On Linux, also set `net.ipv4.tcp_migrate_req=1` (Linux 5.14+, or `--sysctl net.ipv4.tcp_migrate_req=1` in Docker) so the kernel never resets a handshake on a closing `SO_REUSEPORT` listener.
+
+The readiness report against Laravel Octane's own test suite, Laravel 12 and 13, a real ecosystem app and a benchmark is in [READINESS.md](https://github.com/push-in/pam/blob/main/packages/octane/READINESS.md).
 
 `maxConcurrentRequests` is intentionally fixed to `1` for Laravel. Framework managers and facades contain process-global mutable state. Scale safely with multiple supervised PAM workers instead of overriding that boundary.
 
