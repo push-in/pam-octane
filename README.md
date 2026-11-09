@@ -1,67 +1,58 @@
-<!-- pam:product-page:start -->
 <div align="center">
 
-# PAM Octane
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/assets/banner-dark.svg">
+  <img src=".github/assets/banner-light.svg" width="880" alt="pam-octane: Laravel Octane lifecycle on PAM's native transport, powered by Rust and Tokio.">
+</picture>
 
-**Laravel Octane lifecycle, powered by Rust and Tokio.**
-
+**Laravel Octane lifecycle, powered by Rust and Tokio.**<br>
 Connect PAM's native HTTP transport to Octane while Octane keeps ownership of Laravel isolation and worker lifecycle.
 
-[![Release](https://img.shields.io/github/v/release/push-in/pam-octane?style=flat-square&label=stable)](https://github.com/push-in/pam-octane/releases)
-![PHP](https://img.shields.io/badge/PHP-8.5-777BB4?style=flat-square&logo=php&logoColor=white)
-![License](https://img.shields.io/github/license/push-in/pam-octane?style=flat-square)
+[![Packagist](https://img.shields.io/packagist/v/pushinbr/pam-octane?label=packagist&color=f53003)](https://packagist.org/packages/pushinbr/pam-octane)
+![PHP 8.5](https://img.shields.io/badge/php-8.5-777bb4)
+[![License](https://img.shields.io/github/license/push-in/pam-octane?color=1f6feb)](LICENSE)
 
-**[Documentation](https://push-in.github.io/pam-docs/laravel/overview/) · [Why this exists](#why-this-exists) · [What you can build](#what-you-can-build) · [Quick start](#quick-start) · [Issues](https://github.com/push-in/pam-octane/issues)**
+[Install](#install) · [Commands](#quick-example) · [How it works](#how-it-works) · [Compatibility](#compatibility) · [Docs](#docs) · [Issues](https://github.com/push-in/pam-octane/issues)
 
 </div>
 
----
+<a id="install"></a>
+## <picture><img src=".github/assets/icons/terminal.svg" width="22" height="22" alt=""></picture> Install
 
-## Why this exists
+In a Laravel application on PAM:
 
-Connect PAM's native HTTP transport to Octane while Octane keeps ownership of Laravel isolation and worker lifecycle.
-
-| | |
-| --- | --- |
-| **Role** | Octane server adapter |
-| **Execution path** | PAM Runtime · Laravel Octane |
-| **This repository owns** | Transport bridge and PAM server integration |
-| **Boundary** | Octane remains the lifecycle authority; this is not a Laravel fork |
-
-## What you can build
-
-- Existing Octane applications on PAM transport
-- High-throughput Laravel services
-- Rust-served opt-in public response caching with safe bypass rules
-
-## Quick start
-
-```bash
+```sh
+pam init my-app --template laravel
+cd my-app
 pam composer require laravel/octane pushinbr/pam-octane
 pam octane:start
 ```
 
-The **[PAM documentation](https://push-in.github.io/pam-docs/laravel/overview/)** covers prerequisites, production setup, and the complete workflow. PAM projects keep normal manifests and lockfiles; product features stay in the package that owns them.
-<!-- pam:product-page:end -->
+The defaults are production-safe and require no configuration. PAM Octane requires the PAM runtime: running `php artisan pam:octane` reports a clear error because ordinary PHP CLI does not contain PAM's native server; use `pam artisan` or `pam octane:start`.
 
-PAM Octane connects PAM's native HTTP transport directly to Laravel Octane's
-worker. Octane continues to own application isolation, lifecycle events and
-request cleanup; PAM owns PHP Embed, networking, streaming, supervision and
-Tokio-powered infrastructure.
+<a id="quick-example"></a>
+## <picture><img src=".github/assets/icons/code.svg" width="22" height="22" alt=""></picture> Commands
+
+```sh
+pam octane:start     # start Laravel Octane on the PAM supervisor
+pam octane:status    # inspect the PAM Octane application
+pam octane:reload    # reload without downtime
+pam octane:stop      # stop the application
+```
+
+`octane:start` runs `pam up artisan --name pam-octane ... -- pam:octane`; arguments before `--` go to the supervisor, arguments after it to the server.
+
+<a id="how-it-works"></a>
+## <picture><img src=".github/assets/icons/layers.svg" width="22" height="22" alt=""></picture> How it works
+
+PAM Octane connects PAM's native HTTP transport directly to Laravel Octane's worker. Octane continues to own application isolation, lifecycle events and request cleanup; PAM owns PHP Embed, networking, streaming, supervision and Tokio-powered infrastructure.
 
 ```text
 HTTP → PAM / Tokio → PamClient → Octane Worker → Laravel
 HTTP ← PAM / Tokio ← PamClient ← Octane Worker ← Laravel
 ```
 
-## Why this bridge exists
-
-PAM already embeds PHP and provides a persistent native HTTP runtime. This
-package deliberately does not duplicate Octane's Laravel lifecycle. It adapts
-PAM's request and response objects to Octane's public `Client` contract and then
-uses the real `Laravel\Octane\Worker`.
-
-That gives an application:
+PAM already embeds PHP and provides a persistent native HTTP runtime. This package deliberately does not duplicate Octane's Laravel lifecycle. It adapts PAM's request and response objects to Octane's public `Client` contract and then uses the real `Laravel\Octane\Worker`. That gives an application:
 
 - one warm Laravel application per worker;
 - Octane's request sandbox and lifecycle events;
@@ -70,10 +61,15 @@ That gives an application:
 - one safe Laravel execution slot per worker;
 - normal Laravel package discovery and configuration.
 
-## Configure
+| | |
+| --- | --- |
+| **Role** | Octane server adapter |
+| **Boundary** | Octane remains the lifecycle authority; this is not a Laravel fork |
 
-The defaults are production-safe and require no configuration. To customize
-limits, publish the small configuration file:
+<a id="configure"></a>
+## <picture><img src=".github/assets/icons/terminal.svg" width="22" height="22" alt=""></picture> Configure
+
+To customize limits, publish the small configuration file:
 
 ```bash
 pam artisan vendor:publish --tag=pam-octane-config
@@ -89,51 +85,12 @@ PAM_MAX_BODY_BYTES=2097152
 PAM_MAX_RESPONSE_BYTES=268435456
 ```
 
-`maxConcurrentRequests` is intentionally fixed to `1` for Laravel. Framework
-managers and facades contain process-global mutable state. Scale safely with
-multiple supervised PAM workers instead of overriding that boundary.
+`maxConcurrentRequests` is intentionally fixed to `1` for Laravel. Framework managers and facades contain process-global mutable state. Scale safely with multiple supervised PAM workers instead of overriding that boundary.
 
-## Production
+Supervised clusters, route-aware worker pools, systemd, troubleshooting and the quality suite are in [Production](docs/production.md).
 
-The package owns the Octane bridge; the PAM binary owns process supervision.
-For a supervised production cluster, run Artisan as the worker entrypoint:
-
-```bash
-pam start artisan \
-  --workers 8 \
-  --max-requests 100000 \
-  --admin-address 127.0.0.1:3010 \
-  -- pam:octane --host=0.0.0.0 --port=8000
-```
-
-PAM then provides crash recovery, health checks, worker recycling and
-generational `SIGHUP` reloads. Queue workers, Horizon and the scheduler remain
-separate supervised processes.
-
-For systemd, copy the hardened
-[`pam-octane.service`](https://github.com/push-in/pam/blob/main/packaging/pam-octane.service)
-unit and place deployment-specific values in
-`/etc/pam/pam-octane.env`. The unit binds application HTTP to loopback and keeps
-the control plane on `127.0.0.1:3010` by default.
-
-Workloads with different latency or memory profiles can run in isolated pools:
-
-```bash
-pam octane:start \
-  --ingress-address=0.0.0.0:8000 \
-  --pool=api=8@/api,/graphql \
-  --pool=web=4@* \
-  -- --host=0.0.0.0 --port=8000
-```
-
-The Rust ingress streams HTTP and WebSocket traffic, uses segment-aware longest
-prefix routing, and keeps each pool's Laravel container, PHP heap, OPcache and
-restart boundary independent. Exactly one `*` fallback is required. Terminate
-TLS/HTTP3 at the edge when pools are enabled; internal traffic is loopback-only.
-
-## Compatibility
-
-The maintained matrix is:
+<a id="compatibility"></a>
+## <picture><img src=".github/assets/icons/grid.svg" width="22" height="22" alt=""></picture> Compatibility
 
 | PHP | Laravel | Octane |
 | --- | --- | --- |
@@ -142,62 +99,40 @@ The maintained matrix is:
 | 8.4 (supported) | 12.x | 2.19+ |
 | 8.4 (supported) | 13.x | 2.19+ |
 
-PAM Octane requires the PAM runtime. Running `php artisan pam:octane` reports a
-clear error because ordinary PHP CLI does not contain PAM's native server.
-
-## Troubleshooting
-
-Run these commands from the Laravel project root before opening a report:
-
-```bash
-pam --version
-pam doctor .
-pam artisan about
-pam octane:status
-```
-
-- If the package reports that the PAM runtime is missing, replace `php artisan`
-  with `pam artisan` or use `pam octane:start`.
-- If a worker grows after repeated requests, reproduce with one worker, inspect
-  request-scoped singletons and run the soak contract before lowering
-  `--max-requests`.
-- If requests stall, identify blocking PDO, filesystem, HTTP or extension calls;
-  use PAM's cooperative clients, an isolated process pool or additional workers.
-- If a reverse proxy cannot connect, keep the PAM listener private but bind it to
-  the interface reachable by that proxy. Never expose the admin listener publicly.
-
-Sanitize diagnostics: remove credentials, cookies, authorization headers,
-private URLs and application data.
-
-## Quality
-
-```bash
-composer verify
-```
-
-The suite checks request marshalling, output buffers, repeated headers, cookies,
-streaming, `HEAD`, package discovery and invalid context handling. Integration
-tests in the PAM repository cover the native transport and Laravel runtime.
-
-## Runtime capabilities
+<a id="runtime-capabilities"></a>
+## <picture><img src=".github/assets/icons/rocket.svg" width="22" height="22" alt=""></picture> Runtime capabilities
 
 - generational reload, status, stop and control-plane health;
 - route-aware worker pools with crash and memory isolation;
 - cooperative Fiber scheduling and HTTP/Redis clients;
 - isolated bounded PDO and process pools for blocking work;
-- production response cache with tags, authenticated invalidation, collapse and
-  stale-while-revalidate;
+- production response cache with tags, authenticated invalidation, collapse and stale-while-revalidate;
 - bounded route metrics plus Pulse, Telescope and OpenTelemetry integration.
 
-PAM Octane is Apache-2.0 licensed.
+<a id="support"></a>
+## <picture><img src=".github/assets/icons/shield.svg" width="22" height="22" alt=""></picture> Support and repository model
 
-Usage questions belong in PAM GitHub Discussions. Reproducible defects use the
-main PAM issue tracker, and vulnerabilities must use private GitHub Security
-Advisories as described in `SECURITY.md`.
+Usage questions belong in PAM GitHub Discussions. Reproducible defects use the main PAM issue tracker, and vulnerabilities must use private GitHub Security Advisories as described in [SECURITY.md](SECURITY.md).
 
-## Repository model
+PAM Octane is developed in `packages/octane` alongside the runtime so transport and lifecycle changes can be tested atomically. It remains an independent, optional Composer package: applications that do not use Laravel or Octane do not install it.
 
-PAM Octane is developed in `packages/octane` alongside the runtime so transport
-and lifecycle changes can be tested atomically. It remains an independent,
-optional Composer package: applications that do not use Laravel or Octane do
-not install it.
+<a id="docs"></a>
+## <picture><img src=".github/assets/icons/book.svg" width="22" height="22" alt=""></picture> Docs
+
+- [Laravel on PAM](https://push-in.github.io/pam-docs/laravel/overview/)
+- [Production](docs/production.md): supervised cluster, worker pools, systemd, troubleshooting, quality
+- [Changelog](CHANGELOG.md)
+- [Contributing](CONTRIBUTING.md)
+
+<a id="pam-ecosystem"></a>
+## <picture><img src=".github/assets/icons/plug.svg" width="22" height="22" alt=""></picture> Part of the PAM ecosystem
+
+PAM runs PHP natively on servers, desktops and phones. This repository is one piece of it.
+
+| [**PAM**](https://github.com/push-in/pam) | [**PAM Desktop**](https://github.com/push-in/pam-desktop) | [**PAM Native**](https://github.com/push-in/pam-native) | [**Ecosystem**](https://github.com/push-in/pam#ecosystem) |
+| --- | --- | --- | --- |
+| the runtime and CLI | native desktop apps in PHP | native Android and iOS apps in PHP | every official package and plugin |
+
+<sub>Docs: [push-in.github.io/pam-docs](https://push-in.github.io/pam-docs/introduction/) · [Issues](https://github.com/push-in/pam-octane/issues)</sub>
+
+<p align="center"><sub><a href="LICENSE">Apache License 2.0</a> · Made in Brazil by Pushin</sub></p>
