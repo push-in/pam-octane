@@ -11,13 +11,14 @@ use Pam\Octane\OctaneManager;
 use Pam\Octane\PamServer;
 use Pam\Octane\Tables\PamTable;
 use Pam\Octane\Tables\PamTables;
-use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * The Swoole-only Octane APIs inside a PAM worker, through stock Octane:
  * Octane::table(), the shared `octane` cache store and Octane::concurrently().
+ * (Not process-isolated: PAM 2.2.15 cannot run PHPUnit 12's isolated
+ * children. `Swoole\Table` stays an alias of PamTable afterwards, which only
+ * matters to code that runs on PAM.)
  */
-#[RunTestsInSeparateProcesses]
 final class SwooleParityFeaturesTest extends OctaneServerTestCase
 {
     protected function setUp(): void
@@ -33,6 +34,15 @@ final class SwooleParityFeaturesTest extends OctaneServerTestCase
         $_ENV['PAM_OCTANE_SHARED_CACHE'] = $_SERVER['PAM_OCTANE_SHARED_CACHE'] = '1';
 
         parent::setUp();
+    }
+
+    protected function tearDown(): void
+    {
+        (new \ReflectionProperty(PamServer::class, 'serving'))->setValue(null, false);
+        putenv('PAM_OCTANE_SHARED_CACHE');
+        unset($_ENV['PAM_OCTANE_SHARED_CACHE'], $_SERVER['PAM_OCTANE_SHARED_CACHE']);
+
+        parent::tearDown();
     }
 
     protected function defineEnvironment($app): void

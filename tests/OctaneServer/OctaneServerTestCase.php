@@ -14,7 +14,7 @@ use Pam\Octane\PamOctaneServiceProvider;
 /** A Laravel application with stock laravel/octane and this package. */
 abstract class OctaneServerTestCase extends TestCase
 {
-    protected string $stateFile;
+    protected string $stateFile = '';
 
     private string|false $pamBinary = false;
 
@@ -31,7 +31,9 @@ abstract class OctaneServerTestCase extends TestCase
 
     protected function tearDown(): void
     {
-        @unlink($this->stateFile);
+        if ($this->stateFile !== '') {
+            @unlink($this->stateFile);
+        }
         if ($this->pamBinary !== false) {
             putenv('PAM_BINARY='.$this->pamBinary);
         }
