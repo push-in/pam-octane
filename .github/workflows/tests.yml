@@ -68,7 +68,7 @@ jobs:
           composer require --no-update --no-interaction "laravel/octane:${OCTANE}"
           composer require --dev --no-update --no-interaction "laravel/framework:^${LARAVEL}.0" "orchestra/testbench:^${testbench}.0"
           composer update --prefer-dist --no-interaction --no-progress
-          composer show --direct | grep -E '^laravel/(octane|framework) '; composer show laravel/framework | grep -E '^versions'
+          composer show | grep -E '^laravel/(octane|framework) ' || true
       - name: Tests on PAM
         run: pam test
       - name: Tests on php-cli (PAM-only tests skip)
