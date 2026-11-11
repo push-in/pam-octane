@@ -6,6 +6,11 @@ return [
     'host' => env('PAM_HOST', '127.0.0.1'),
     'port' => (int) env('PAM_PORT', 8000),
 
+    // The `octane` cache store in shared memory (one cache for every worker,
+    // like on Swoole, sized by `octane.cache`). null: shared when task
+    // workers run (--task-workers), per worker otherwise.
+    'shared_cache' => env('PAM_OCTANE_SHARED_CACHE') === null ? null : (bool) env('PAM_OCTANE_SHARED_CACHE'),
+
     // Headers added to static files served from public/, by path pattern.
     'static_file_headers' => [
         // 'build/*' => ['Cache-Control' => 'public, max-age=31536000, immutable'],
@@ -50,5 +55,28 @@ return [
         'responseCachePurgePath' => env('PAM_RESPONSE_CACHE_PURGE_PATH') ?: null,
         'responseCachePurgeSecret' => env('PAM_RESPONSE_CACHE_PURGE_SECRET') ?: null,
         'responseCacheTagHeader' => env('PAM_RESPONSE_CACHE_TAG_HEADER', 'x-pam-cache-tags'),
+        // Edge page cache: responses marked with `Cache-Control: public,
+        // s-maxage=N` (see Pam\Octane\Http\Middleware\CacheResponse) are
+        // served by Rust without entering PHP until they expire or are purged
+        // (Pam::purge('products'), `pam cache:purge --tag=products`).
+        'responseCache' => (bool) env('PAM_RESPONSE_CACHE', false),
+        // Browsers send the session cookie to every page; allow it only when
+        // the cached routes run without the session middleware
+        // (->withoutMiddleware(CacheResponse::STATEFUL)).
+        'responseCacheAllowCookies' => (bool) env('PAM_RESPONSE_CACHE_ALLOW_COOKIES', false),
+        'responseCacheAllowAuthorization' => (bool) env('PAM_RESPONSE_CACHE_ALLOW_AUTHORIZATION', false),
+        'responseCacheIgnoredQueryParams' => array_values(array_filter(array_map(
+            'trim',
+            explode(',', (string) env('PAM_RESPONSE_CACHE_IGNORED_QUERY_PARAMS', 'utm_*,gclid,fbclid')),
+        ))),
+        'responseCacheMaxObjectBytes' => (int) env('PAM_RESPONSE_CACHE_MAX_OBJECT_BYTES', 8 * 1024 * 1024),
+        'responseCacheCompress' => (bool) env('PAM_RESPONSE_CACHE_COMPRESS', true),
+        'responseCacheStatusHeader' => (bool) env('PAM_RESPONSE_CACHE_STATUS_HEADER', true),
+        // Purges from queue workers, Artisan and `pam cache:purge` reach every
+        // worker through this append-only log.
+        'responseCacheInvalidationLog' => env(
+            'PAM_RESPONSE_CACHE_INVALIDATION_LOG',
+            function_exists('storage_path') ? storage_path('framework/cache/pam-page-cache.log') : null,
+        ),
     ],
 ];

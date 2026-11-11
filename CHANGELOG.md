@@ -2,6 +2,35 @@
 
 All notable changes to PAM Octane will be documented here.
 
+## 1.3.0 - 2026-11-11
+
+Requires PAM 2.2.15 for the edge page cache, the post-boot zygote, shared
+tables, task workers and ticks; the package keeps working on 2.2.11+ (the
+page cache headers are then set and simply not acted upon).
+
+- With PAM's post-boot zygote (the default for `octane:start` on Linux),
+  workers are forked from a booted Laravel application. The bridge closes the
+  database and Redis connections of both the console and the Octane worker
+  application before the fork (`PamServer::registerForkHooks()`), so every
+  worker opens its own connections lazily. Task workers forked from the
+  booted application take the task handler per request.
+- `Pam\Octane\Http\Middleware\CacheResponse` (alias `pam.cache`) marks
+  routes for PAM's edge page cache with a TTL, stale window and tags
+  (`product:{product}` resolves route parameters).
+- `Pam\Octane\Facades\Pam::purge()`, `purgeUrl()` and `purgeAll()`, and the
+  `PurgesPageCache` model trait that purges a model's tags after commit.
+  Purges from queue workers and Artisan use the invalidation log.
+- New `PAM_RESPONSE_CACHE*` settings in `config/pam-octane.php`.
+- Octane tables (`octane.tables`) in shared memory: `PamOctane::table($name)`
+  (and `Octane::table()` on Octane versions with PAM table support).
+- The `octane` cache store is shared by every worker when task workers run, or
+  with `PAM_OCTANE_SHARED_CACHE=true`; otherwise it stays per worker.
+- `--task-workers` (or `PAM_OCTANE_TASK_WORKERS`) for `Octane::concurrently()`,
+  task dispatch and `Octane::tick()` / cache intervals.
+- Readiness: Octane's table and cache tests run against PAM tables, the matrix
+  checks every feature, and `tools/parity_soak.py` runs soak, chaos and leak
+  tests for them.
+
 ## 1.2.0 - 2026-11-09
 
 Requires PAM 2.2.13 for the transport fixes (streamed uploads, 504 on timeout,
