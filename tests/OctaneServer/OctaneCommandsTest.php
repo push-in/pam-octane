@@ -7,7 +7,6 @@ namespace Pam\Octane\Tests\OctaneServer;
 use Illuminate\Contracts\Console\Kernel;
 use Laravel\Octane\Commands as Octane;
 use Laravel\Octane\Contracts\ServerProcessInspector as ServerProcessInspectorContract;
-use Laravel\Octane\PosixExtension;
 use Pam\Octane\Commands\Octane as Pam;
 use Pam\Octane\Commands\StartPamCommand;
 use Pam\Octane\Server\ServerProcessInspector;

@@ -3,7 +3,7 @@
 # Laravel application. Meant for a disposable container, for example:
 #
 #   docker run --rm -v "$PWD:/package:ro" php:8.5-cli \
-#       bash /package/scripts/e2e-smoke.sh 13
+#       bash /package/tests/tools/e2e-smoke.sh 13
 #
 # Arguments: the Laravel major version (12 or 13). Env:
 #   PAM_OCTANE_VERSION  install this pushinbr/pam-octane version from

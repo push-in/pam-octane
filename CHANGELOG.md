@@ -29,9 +29,9 @@ for that pull request. No breaking changes; requires PAM 2.2.15 for
 - Tests: the fork's PAM server tests (binary requirements, process inspector,
   state file), Octane's 35 Swoole-only `TableTest` and `OctaneStoreTest`
   ported to PAM tables, the commands on Octane 2.19 and 2.24 with Laravel 12
-  and 13, `scripts/octane-suite.sh` (laravel/octane's own suite with this
+  and 13, `tests/tools/octane-suite.sh` (laravel/octane's own suite with this
   package installed: 260 tests, 0 failures, 112 exchanges cross-checked
-  through the PAM client) and `scripts/e2e-smoke.sh` (a fresh application in
+  through the PAM client) and `tests/tools/e2e-smoke.sh` (a fresh application in
   a container: install, start, a request, reloads under load with no failed
   request, stop). CI runs them on every pull request.
 - The test suite no longer needs PHPUnit process isolation, which PAM 2.2.15

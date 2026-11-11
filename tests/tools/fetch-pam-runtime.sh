@@ -4,7 +4,7 @@
 # Under `pam test` the real runtime is used instead.
 set -eu
 ref="${PAM_RUNTIME_REF:-v2.2.15}"
-dir="$(cd "$(dirname "$0")/.." && pwd)/.pam-runtime"
+dir="$(cd "$(dirname "$0")/../.." && pwd)/.pam-runtime"
 mkdir -p "$dir"
 for file in bootstrap async native shared laravel; do
     curl --proto '=https' --tlsv1.2 -fsSL \

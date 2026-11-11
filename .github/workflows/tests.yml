@@ -1,0 +1,114 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PAM_VERSION: v2.2.15
+
+jobs:
+  static:
+    name: Style and static analysis
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: composer:v2
+          coverage: none
+      - run: composer validate --strict
+      - run: composer update --prefer-dist --no-interaction --no-progress
+      - run: tests/tools/fetch-pam-runtime.sh
+        env:
+          PAM_RUNTIME_REF: ${{ env.PAM_VERSION }}
+      - run: composer style
+      - run: composer analyse
+
+  tests:
+    name: Octane ${{ matrix.octane }}, Laravel ${{ matrix.laravel }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        octane: ['2.19.0', '^2.24']
+        laravel: ['12', '13']
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: composer:v2
+          extensions: pcntl, posix
+          coverage: none
+      - name: Install PAM
+        run: |
+          curl --proto '=https' --tlsv1.2 -fsSL "https://github.com/push-in/pam/releases/download/${PAM_VERSION}/install.sh" | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Install dependencies
+        env:
+          OCTANE: ${{ matrix.octane }}
+          LARAVEL: ${{ matrix.laravel }}
+        run: |
+          testbench=$([ "$LARAVEL" = 12 ] && echo 10 || echo 11)
+          composer require --no-update --no-interaction "laravel/octane:${OCTANE}"
+          composer require --dev --no-update --no-interaction "laravel/framework:^${LARAVEL}.0" "orchestra/testbench:^${testbench}.0"
+          composer update --prefer-dist --no-interaction --no-progress
+          composer show laravel/octane laravel/framework | grep -E '^(name|versions)'
+      - name: Tests on PAM
+        run: pam test
+      - name: Tests on php-cli (PAM-only tests skip)
+        run: |
+          tests/tools/fetch-pam-runtime.sh
+          vendor/bin/phpunit
+        env:
+          PAM_RUNTIME_REF: ${{ env.PAM_VERSION }}
+
+  octane-suite:
+    name: laravel/octane suite with the package
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: composer:v2
+          extensions: pcntl, posix
+          coverage: none
+      - name: Install PAM
+        run: |
+          curl --proto '=https' --tlsv1.2 -fsSL "https://github.com/push-in/pam/releases/download/${PAM_VERSION}/install.sh" | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: tests/tools/octane-suite.sh
+
+  e2e:
+    name: End to end, Laravel ${{ matrix.laravel }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        laravel: ['12', '13']
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - name: Fresh application in a container
+        run: >-
+          docker run --rm -e PAM_VERSION -v "$PWD:/package:ro" php:8.5-cli
+          bash /package/tests/tools/e2e-smoke.sh ${{ matrix.laravel }}

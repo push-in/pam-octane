@@ -38,7 +38,7 @@ class PamClientTest extends TestCase
 
     public function test_marshal_request()
     {
-        [$request, $context] = (new PamClient)->marshalRequest($context = $this->context());
+        [$request, $context] = (new PamClient())->marshalRequest($context = $this->context());
 
         $this->assertInstanceOf(Request::class, $request);
         $this->assertSame('/home', $request->getPathInfo());
@@ -49,14 +49,14 @@ class PamClientTest extends TestCase
 
     public function test_marshal_request_keeps_the_raw_body()
     {
-        [$request] = (new PamClient)->marshalRequest($this->context('POST', '/home', '{"a":1}'));
+        [$request] = (new PamClient())->marshalRequest($this->context('POST', '/home', '{"a":1}'));
 
         $this->assertSame('{"a":1}', $request->getContent());
     }
 
     public function test_response()
     {
-        $client = new PamClient;
+        $client = new PamClient();
         [, $context] = $client->marshalRequest($context = $this->context());
 
         $client->respond($context, new OctaneResponse(new Response('Hello World', 201, ['X-Test' => 'yes']), 'prefix:'));
@@ -69,7 +69,7 @@ class PamClientTest extends TestCase
 
     public function test_streamed_generator_response_flushes_each_yielded_chunk()
     {
-        $client = new PamClient;
+        $client = new PamClient();
         [, $context] = $client->marshalRequest($this->context());
 
         $client->respond($context, new OctaneResponse(new StreamedResponse(function () {
@@ -82,7 +82,7 @@ class PamClientTest extends TestCase
 
     public function test_error_method_sends_error_response_to_pam()
     {
-        $client = new PamClient;
+        $client = new PamClient();
         [$request, $context] = $client->marshalRequest($this->context());
         $app = $this->createApplication();
         $app['config']['app.debug'] = false;
@@ -96,7 +96,7 @@ class PamClientTest extends TestCase
 
     public function test_error_method_sends_detailed_error_response_to_pam_in_debug_mode()
     {
-        $client = new PamClient;
+        $client = new PamClient();
         [$request, $context] = $client->marshalRequest($this->context());
         $app = $this->createApplication();
         $app['config']['app.debug'] = true;

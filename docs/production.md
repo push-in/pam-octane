@@ -80,11 +80,11 @@ private URLs and application data.
 ## Quality
 
 ```bash
-scripts/fetch-pam-runtime.sh   # PAM's PHP sources, for PHPStan outside PAM
+tests/tools/fetch-pam-runtime.sh   # PAM's PHP sources, for PHPStan outside PAM
 composer analyse               # PHPStan, level 9
 pam test                       # the suite on PAM's runtime (php-cli skips PAM-only tests)
-scripts/octane-suite.sh        # laravel/octane's own suite with this package
-docker run --rm -v "$PWD:/package:ro" php:8.5-cli bash /package/scripts/e2e-smoke.sh 13
+tests/tools/octane-suite.sh        # laravel/octane's own suite with this package
+docker run --rm -v "$PWD:/package:ro" php:8.5-cli bash /package/tests/tools/e2e-smoke.sh 13
 ```
 
 The suite checks request marshalling, output buffers, repeated headers, cookies,

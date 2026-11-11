@@ -6,10 +6,10 @@
 #   2. the same suite with every request and response routed through the
 #      real PAM client (PamFakeClient), cross-checked against Laravel;
 #   3. the upstream suite on the host php-cli, when one is available.
-# Usage: scripts/octane-suite.sh [octane-tag]   (default: the latest tag)
+# Usage: tests/tools/octane-suite.sh [octane-tag]   (default: the latest tag)
 # Env: PAM (the pam binary), OCTANE_SUITE_DIR (work directory).
 set -euo pipefail
-package="$(cd "$(dirname "$0")/.." && pwd)"
+package="$(cd "$(dirname "$0")/../.." && pwd)"
 pam="${PAM:-pam}"
 work="${OCTANE_SUITE_DIR:-$package/.octane-suite}"
 mkdir -p "$work"
