@@ -11,3 +11,10 @@ parameters:
         - tests/bootstrap.php
     tmpDir: .phpstan-cache
     treatPhpDocTypesAsCertain: false
+    ignoreErrors:
+        # Octane documents its store's table as \Swoole\Table and uses it by
+        # duck typing; on PAM it receives the shared-memory PamTable.
+        -
+            identifier: argument.type
+            message: '#Laravel\\Octane\\Cache\\OctaneStore constructor expects Swoole\\Table#'
+            path: tests/Parity/OctaneStoreTest.php
