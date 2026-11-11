@@ -89,7 +89,15 @@ With PAM 2.2.13 or newer:
 
 - Uploads are streamed to temporary files, like PHP-FPM: a 1 GB upload works with the default `memory_limit`. PHP's `upload_max_filesize`, `post_max_size`, `max_file_uploads` and `upload_tmp_dir` apply, `is_uploaded_file()`/`move()` work, and the files are deleted when the request ends. `PAM_MAX_BODY_BYTES` only bounds bodies held in memory.
 - The request timeout follows Octane's `octane.max_execution_time` (`0` disables it; `PAM_REQUEST_TIMEOUT_MS` overrides it). A request past it is answered `504 Gateway Timeout`, even when the handler blocks, and its worker is replaced.
-- `octane:reload` and `--max-requests` recycling are make-before-break and drop no requests. On Linux, also set `net.ipv4.tcp_migrate_req=1` (Linux 5.14+, or `--sysctl net.ipv4.tcp_migrate_req=1` in Docker) so the kernel never resets a handshake on a closing `SO_REUSEPORT` listener.
+- `octane:reload` and `--max-requests` recycling are make-before-break and drop no requests. With PAM 2.2.15 the PAM master keeps every listening socket and a replacement worker adopts it, so no listener with queued connections is ever closed: no `net.ipv4.tcp_migrate_req` setting is needed.
+
+With PAM 2.2.15 or newer:
+
+- **Post-boot zygote.** On Linux, `octane:start` boots Laravel once and forks every worker (new, recycled or replacing a crashed one) from the booted application: workers are ready in a few milliseconds and share the booted memory copy-on-write. Database and Redis connections opened while booting are closed before the fork; register `\Pam\Fork::beforeFork()` / `\Pam\Fork::afterFork()` for anything else to reset per process. `PAM_PREFORK_BOOT=engine` boots Laravel in every worker instead.
+- **Edge page cache.** `PAM_RESPONSE_CACHE=true` lets PAM serve whole pages from Rust without entering PHP. Mark routes with `Pam\Octane\Http\Middleware\CacheResponse` (alias `pam.cache:ttl,stale,tags...`) and purge with `Pam::purge()`, `Pam::purgeUrl()`, `Pam::purgeAll()` or the `PurgesPageCache` model trait. Requests with `Cookie` or `Authorization` and responses that set cookies are never cached by default.
+- **Tables, shared cache, tasks and ticks.** Octane tables (`octane.tables`) live in shared memory (`PamOctane::table()`), `--task-workers=N` runs `Octane::concurrently()`, task dispatch, `Octane::tick()` and cache intervals, and the `octane` cache store is shared by every worker when task workers run.
+
+Details for each: the [package README in the PAM repository](https://github.com/push-in/pam/blob/main/packages/octane/README.md).
 
 The readiness report against Laravel Octane's own test suite, Laravel 12 and 13, a real ecosystem app and a benchmark is in [READINESS.md](https://github.com/push-in/pam/blob/main/packages/octane/READINESS.md).
 
